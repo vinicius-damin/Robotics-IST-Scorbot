@@ -89,12 +89,15 @@ def findCorners(image):
     # calculate the centroids of the corners
     _, _, _, centroids = cv2.connectedComponentsWithStats(dst)
     centroids = (np.rint(centroids)).astype(int)
+    centroids = centroids[:, [1, 0]]
+    centroids = centroids[1:]
+    centroids = [tuple(element) for element in centroids]
 
     # Threshold for an optimal value, it may vary depending on the image.
     cornersImg = image.copy()
     cornersImg[dst==255]=[127]
 
-    return cornersImg, centroids[:, [1, 0]]
+    return cornersImg, centroids
 
 # create a square with L = 2*radius, center = centerPoint and find the intersection with the refined image
 def findIntersection(refinedImage, centerPoint, radius, epsilon):
@@ -103,6 +106,7 @@ def findIntersection(refinedImage, centerPoint, radius, epsilon):
     imageDrawed = refinedImage.copy()
     centerPointX = centerPoint[0]
     centerPointY = centerPoint[1]
+    radius = int(radius)
 
     x = centerPointX-radius
     y = centerPointY-radius
@@ -112,7 +116,7 @@ def findIntersection(refinedImage, centerPoint, radius, epsilon):
             imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 150
             intersections.append((x,y))
         # color the path
-        imageDrawed[x,y] = 50
+        imageDrawed[x,y] = 120
         y += 1
 
     x = centerPointX-radius
@@ -120,10 +124,10 @@ def findIntersection(refinedImage, centerPoint, radius, epsilon):
     for i, color in np.ndenumerate(imageDrawed[x : x+2*radius, y]):
         # if the cell is black
         if color == 0:
-            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 160
+            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 150
             intersections.append((x,y))
         # color the path
-        imageDrawed[x,y] = 70
+        imageDrawed[x,y] = 120
         x += 1
  
     x = centerPointX+radius
@@ -131,10 +135,10 @@ def findIntersection(refinedImage, centerPoint, radius, epsilon):
     for i, color in np.ndenumerate(imageDrawed[x, y : y-2*radius :-1]):
         # if the cell is black
         if color == 0:
-            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 170
+            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 150
             intersections.append((x,y))
         # color the path
-        imageDrawed[x,y] = 90
+        imageDrawed[x,y] = 120
         y -= 1
 
     x = centerPointX+radius
@@ -142,12 +146,12 @@ def findIntersection(refinedImage, centerPoint, radius, epsilon):
     for i, color in np.ndenumerate(imageDrawed[x:x-2*radius : -1, y]):
         # if the cell is black
         if color == 0:
-            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 180
+            imageDrawed[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 150
             intersections.append((x,y))
         # color the path
-        imageDrawed[x,y] = 110
+        imageDrawed[x,y] = 120
         x -= 1
-    
+
     return imageDrawed, intersections
         
 
@@ -172,22 +176,67 @@ def findStartingPoints(refinedImage, centerOfCorners, radius, epsilon):
     print(f"NO GOOD STARTING POINT FOUND: \n Search Radius = {radius} \n Epsilon = {epsilon}")
     return centerOfCorners[0]
 
-def iterThroughFeature(refinedFeatureImg, stepRadius, epsilon):
-    return
+# defines features
+def findFeatures(refinedFeatureImg, startPoint, centroids, stepRadius, epsilon):
+    stepImg = refinedFeatureImg.copy()
+    stepsList = [[startPoint]]
+    stepRadius = int(stepRadius)
+    centroidsCopy = centroids.copy()
+    centroidsCopy.remove(startPoint)
+
+
+    # While there is a next step to go:
+    while stepsList[-1] != []:
+        # current coords
+        x = stepsList[-1][0][0]
+        y = stepsList[-1][0][1]
+        
+        # Centroid Stpe: if there is a centroid near, go directly to it
+        centroidSearchingArea = []
+        centroidRadius = 3*stepRadius
+        for ix in range(x-centroidRadius,x+centroidRadius+1):
+            for jy in range(y-centroidRadius,y+centroidRadius+1):
+                centroidSearchingArea.append((ix,jy))
+        
+        if (any((match := item) in centroidsCopy for item in centroidSearchingArea)):
+            # 👇️ this runs
+            stepsList.append([match])
+            centroidsCopy.remove(match)
+            # Make the little gray square, epsilon must be way bigger to cover for corner errors
+            stepImg[int(stepsList[-1][0][0]-epsilon*2):int(stepsList[-1][0][0]+epsilon*2)+1 , int(stepsList[-1][0][1]-epsilon*2):int(stepsList[-1][0][1]+epsilon*2)+1] = 150
+            thickness = 15
+        
+        
+        # Normal step: check available black points inside the given radius
+        else:
+            stepImg, stepIntersection = findIntersection(stepImg, stepsList[-1][0], stepRadius, epsilon)
+            stepsList.append(stepIntersection)
+            thickness = 7
+        
+        if stepsList[-1] == []:
+            return stepImg, stepsList[:-1]
+            
+        # remove path travelled (paint it almost white)
+        start_point = (stepsList[-2][0][1],stepsList[-2][0][0])
+        end_point = (stepsList[-1][0][1], stepsList[-1][0][0])
+        color = (200,200,200)
+        stepImg = cv2.line(stepImg, start_point, end_point, color, thickness)
+            
+    return stepImg, stepsList[:-1]
 
 
 #############################################################################################
 ################################## OUR ALGORITHM CLASS ######################################
 #############################################################################################
 
-class Image:
+class ImageST:
     def __init__(self, featureNumber, startingFeature, FeatureList):
         self.featureNumber = featureNumber
         self.startingFeature = startingFeature
         self.FeatureList = FeatureList
 
-class ImgFeature:
-    def __init__(self, id, startingPoint, endingPoint, middlePoints):
+class ImgFeatureNode:
+    def __init__(self, id, startingPoint, endingPoint, middlePoints=[]):
         self.id = id
         self.startingPoint = startingPoint
         self.endingPoint = endingPoint
@@ -197,24 +246,21 @@ class ImgFeature:
 #############################################################################################
 ################################## MAIN CODE ################################################
 #############################################################################################
-def main():
+def main(stepRadius, epsilon, heightFinalImageScorbot, startingPointScorbot):
     # Read Image
     img = readImage()
 
-    # Manually define parameters of the algorithm
-    radiusStartingPoint = 80 # large enough radius
-    radiusStep = radiusStartingPoint/2
-    epsilon = 15 # since the stroke is 5p width, with 15p we make sure
-    
+    # For better search of good starting point
+    radiusStartingPoint = stepRadius*2 
+
     # Expand boundary according to the parameter to avoid out of bounds error
-    img = expandBoundary(img, radiusStartingPoint) 
+    img = expandBoundary(img, radiusStartingPoint+1) 
 
     # Make a copy to preserve original img
     imgCopy = img.copy()
 
     # Find the corners of the image
     cornersImg, centroids = findCorners(imgCopy)
-    centroids = centroids[1:]
 
     # Dilate to lower the number of black pixels
     refinedImage = dilateImage(imgCopy,4)
@@ -222,34 +268,68 @@ def main():
     # Turn most non white pixels to black
     refinedImage = blackenTheImage(refinedImage)
 
-    print('Centroids and corners image:')
-    print(centroids)
-    pyplotImage(cornersImg)
-
     # Find a good starting point with refined image
     startingPoint = findStartingPoints(refinedImage, centroids, radiusStartingPoint, epsilon)
-    print('startingPoint:')
-    print(startingPoint)
 
-    
     # Step through all the image to find points for the robot
+    stepImg, stepsList = findFeatures(refinedImage, startingPoint, centroids, radiusStep, epsilon) # [[(173, 806)], 
 
-    print('Will show all intersections in all centroids')
-    for centroid in centroids:
-        imgDrawed, intersections = findIntersection(refinedImage,centroid, radiusStartingPoint, epsilon)
-        print(intersections)
-        pyplotImage(imgDrawed)
-    
+    # Turn into numpy array so it is easy to escale into the real world
+    npStepsList = np.array([i[0] for i in stepsList])
 
-    # Create Figure with opencv
-    #createFigureWithOpenCV(img)
+    # The final image will have 29,7cm of height:
+    height = heightFinalImageScorbot
+    scaleFactor = height / (stepImg.shape[0]-2*(radiusStartingPoint+1))
+    npStepsList = npStepsList * scaleFactor + startingPointScorbot
 
-    print(f"Finished showing the image")
+    # Calculation of the minimum step made by the robot
+    min_step = np.min([np.sqrt((npStepsList[i][0] - npStepsList[i+1][0])**2 + (npStepsList[i][1] - npStepsList[i+1][1])**2)  for i in range(npStepsList.shape[0]-1)])
+
+    print(f'Virtual data:')
+    print(f'\t First points:\n{stepsList[0:5]}')
+    print(f'\tCentroids of corners: {centroids}')
+    print(f'\tStarting point: {startingPoint}')
+    print(f'\tStep size: {radiusStep} pixels')
+    print(f'\tNumber of steps: {len(stepsList)}')
+
+    print(f'\nReal world data:')
+    print(f'\t First points:\n{npStepsList[0:5]/10}mm')
+    print(f'\tStarting point: {npStepsList[0]/10}mm')
+    print(f'\tStep size: {radiusStep/10:.3f}mm')
+    print(f'\tThe minimum step was {min_step/10:.3f}mm')
+
+    print(f"\nFinished analyzing the image")
+
+    return stepImg, npStepsList
 
 
+###############################################################################################################
+############################## You can change the parameters bellow! ##########################################
+###############################################################################################################
 
 if __name__ == "__main__":
-    main()
+
+    # Algorithm parameters:
+    radiusStep = 40 #
+    epsilon = 15 # since the stroke is 5p, with 15p we have room for error
+
+    # Set size of the image to be drawn by SCORBOT height: 29,7cm
+    height = 2970
+
+    # Put the coords of the top left corner of the paper (like you are facing towards the front of the robot)
+    startingPointScorbot = [6000, -3000] # In tenths of milimiters
+
+    # Run Main code
+    stepImg, stepsList = main(radiusStep, epsilon, height, startingPointScorbot)
+
+    # Plot graphs to see if it worked:
+    # 1. Colorbar with steps
+    pyplotImage(stepImg)
+    # 2. Final points in world coords
+    plt.figure()
+    plt.scatter(stepsList[:,0], stepsList[:,1], marker='.')
+    plt.title('Points in the vector given to Scorbot')
+    plt.show()
 
 
 
