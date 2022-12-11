@@ -38,7 +38,7 @@ def findCorners(image):
     cornersImg = image.copy()
     cornersImg[dst==255]=[127]
 
-    return cornersImg, centroids
+    return cornersImg, centroids[:, [1, 0]]
 
 def dilateImage(image, numIter):
     # Taking a matrix of size 5 as the kernel
@@ -68,25 +68,160 @@ def createFigureWithOpenCV(image):
     if cv2.waitKey(0) & 0xff == 27:
         cv2.destroyAllWindows()
 
-def isStartingPoint(refinedImage, centerOfCorners):
-    pass
+def findIntersection(image, centerPoint, radius, epsilon):
+    intersections = []
+
+    imageCopy = image.copy()
+    centerPointX = centerPoint[0]
+    centerPointY = centerPoint[1]
+
+    x = centerPointX-radius
+    y = centerPointY-radius
+    for i, color in np.ndenumerate(imageCopy[x, y : y+2*radius]):
+        # if the cell is black
+        if color == 0:
+            print("Found a black pixels")
+            imageCopy[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 150
+            pyplotImage(imageCopy)
+        
+        print(f'Orig color = {color} changed x = {x}, y = {y} to 150')
+        imageCopy[x,y] = 50
+        #pyplotImage(imageCopy)
+
+        y += 1
+
+    x = centerPointX-radius
+    y = centerPointY+radius
+    for i, color in np.ndenumerate(imageCopy[x : x+2*radius, y]):
+        
+        # if the cell is black
+        if color == 0:
+            print("Found a black pixels")
+            imageCopy[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 160
+            pyplotImage(imageCopy)
+
+        print(f'changed x = {x}, y = {y} to 160')
+        imageCopy[x,y] = 70
+        x += 1
+    pyplotImage(imageCopy)
+
+
+    x = centerPointX+radius
+    y = centerPointY+radius
+    for i, color in np.ndenumerate(imageCopy[x, y : y-2*radius :-1]):
+        
+        # if the cell is black
+        if color == 0:
+            print("Found a black pixels")
+            imageCopy[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 170
+            pyplotImage(imageCopy)
+        
+        print(f'changed x = {x}, y = {y} to 170')
+        imageCopy[x,y] = 90
+        
+        y -= 1
+    
+    pyplotImage(imageCopy)
+
+    x = centerPointX+radius
+    y = centerPointY-radius
+    for i, color in np.ndenumerate(imageCopy[x:x-2*radius : -1, y]):
+        # if the cell is black
+        if color == 0:
+            print("Found a black pixels")
+            imageCopy[int(x-epsilon/2):int(x+epsilon/2)+1 , int(y-epsilon/2):int(y+epsilon/2)+1] = 180
+            pyplotImage(imageCopy)
+
+        print(f'changed x = {x}, y = {y} to 180')
+        imageCopy[x,y] = 110
+
+        x -= 1
+    
+    pyplotImage(imageCopy)
+        
+
+
+
+
+def findStartingPoints(refinedImage, centerOfCorners):
+    startingImg = refinedImage.copy()
+    #check if there is only 1 black pixel in a radius epsilon which doesn't neighbor another
+    #black one withing a range of 5 pixels
+    radius = 40 # large enough radius
+    epsilon = 10 # since the stroke is 5p width, with 10p we make sure
+    for centroid in centerOfCorners:
+        counter = 0
+
+        pass
+
+        # Blue color in BGR
+        color = (0, 0, 150)
+        # Line thickness of 2 px
+        thickness = 1
+        image = cv2.circle(startingImg, tuple(centroid), radius, color, thickness)
+        # Displaying the image
+        
+    #pyplotImage(image)
+    #pyplotImage(refinedImage)
+
+def expandBoundary(image):
+    # Add 50p to each side so no out of bounds error
+    a = np.zeros((image.shape[0], 50))
+    a[a==0] = 255
+    image = np.concatenate((image, a), axis=1)
+    image = np.concatenate((a, image), axis=1)
+
+    b = np.zeros((50, image.shape[1]))
+    b[b==0] = 255
+    image = np.concatenate((image, b), axis=0)
+    image = np.concatenate((b, image), axis=0)
+    return image
+
+def reduceBoundary(image):
+    image = image[50:-50,50:-50]
+    return image
+
+
 
 def main():
     # Read Image
     img = readImage()
     
-    # Find the corners
-    cornersImg, centroids = findCorners(img)
 
-        # Dilate
-    img = dilateImage(img,4)
+
+    # Expand boundary by 50p to avoid out of bounds error
+    img = expandBoundary(img)  
+
+    # Make a copy to preserve original img
+    imgCopy = img.copy()
+
+    # Find the corners
+    cornersImg, centroids = findCorners(imgCopy)
+    centroids = centroids[1:]
+
+    # Dilate
+    imgCopy = dilateImage(imgCopy,4)
 
     # Turn black
-    img = blackenTheImage(img)
+    imgCopy = blackenTheImage(imgCopy)
+
+    print(centroids)
+    pyplotImage(cornersImg)
+
+    radius = 40 # large enough radius
+    epsilon = 10 # since the stroke is 5p width, with 10p we make sure
+
+    print('started findIntersection')
+    findIntersection(imgCopy,centroids[4], radius, epsilon)
+    
 
     # Colormap Pyplot
     pyplotImage(img)
+    pyplotImage(imgCopy)
+
     pyplotImage(cornersImg)
+
+    findStartingPoints(img, centroids)
 
     # Create Figure with opencv
     #createFigureWithOpenCV(img)
