@@ -12,4 +12,4 @@ There is a requirements.txt with all the libraries needed to run the code.
 2. Open the terminal in the folder **Robotics-IST-Scorbot** (otherwise Python won't find the path to the image)
 Ex: Your terminal has to show something like this "*C:\somePath\Robotics-IST-Scorbot>*"
 
-3. Run (ourMainCode.py) and the robot will draw the image put inside the folder mentioned above
+3. Run (ourMainCode.py) and the robot will draw the image put inside the folder mentioned above (this step is not finished, but you can use the code in *howToObtainList* to obtain the list to give to SCORBOT)

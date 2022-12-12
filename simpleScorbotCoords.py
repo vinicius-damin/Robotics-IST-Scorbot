@@ -246,7 +246,7 @@ class ImgFeatureNode:
 #############################################################################################
 ################################## MAIN CODE ################################################
 #############################################################################################
-def main(stepRadius, epsilon, heightFinalImageScorbot, startingPointScorbot):
+def getSimpleCoords(stepRadius, epsilon, heightFinalImageScorbot, startingPointScorbot):
     # Read Image
     img = readImage()
 
@@ -272,7 +272,7 @@ def main(stepRadius, epsilon, heightFinalImageScorbot, startingPointScorbot):
     startingPoint = findStartingPoints(refinedImage, centroids, radiusStartingPoint, epsilon)
 
     # Step through all the image to find points for the robot
-    stepImg, stepsList = findFeatures(refinedImage, startingPoint, centroids, radiusStep, epsilon) # [[(173, 806)], 
+    stepImg, stepsList = findFeatures(refinedImage, startingPoint, centroids, stepRadius, epsilon) # [[(173, 806)], 
 
     # Turn into numpy array so it is easy to escale into the real world
     npStepsList = np.array([i[0] for i in stepsList])
@@ -289,13 +289,13 @@ def main(stepRadius, epsilon, heightFinalImageScorbot, startingPointScorbot):
     print(f'\t First points:\n{stepsList[0:5]}')
     print(f'\tCentroids of corners: {centroids}')
     print(f'\tStarting point: {startingPoint}')
-    print(f'\tStep size: {radiusStep} pixels')
+    print(f'\tStep size: {stepRadius} pixels')
     print(f'\tNumber of steps: {len(stepsList)}')
 
     print(f'\nReal world data:')
     print(f'\t First points:\n{npStepsList[0:5]/10}mm')
     print(f'\tStarting point: {npStepsList[0]/10}mm')
-    print(f'\tStep size: {radiusStep/10:.3f}mm')
+    print(f'\tStep size: {stepRadius/10:.3f}mm')
     print(f'\tThe minimum step was {min_step/10:.3f}mm')
 
     print(f"\nFinished analyzing the image")
@@ -320,7 +320,7 @@ if __name__ == "__main__":
     startingPointScorbot = [6000, -3000] # In tenths of milimiters
 
     # Run Main code
-    stepImg, stepsList = main(radiusStep, epsilon, height, startingPointScorbot)
+    stepImg, stepsList = getSimpleCoords(radiusStep, epsilon, height, startingPointScorbot)
 
     # Plot graphs to see if it worked:
     # 1. Colorbar with steps
