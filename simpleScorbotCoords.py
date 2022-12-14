@@ -9,7 +9,7 @@ from rdp import rdp
 def readImage():
     # path: directory where the git rep is located
     path = os.getcwd() + r'\PutTheImageHere'
-    imgFilePath = path + fr'\{os.listdir(path)[1]}'
+    imgFilePath = path + fr'\{os.listdir(path)[0]}'
 
     # read image in gray (_,0)
     img = cv2.imread(imgFilePath,0)
