@@ -17,6 +17,33 @@ startingPointScorbot = [6000, -3000] #check with teacher if this size is ok
 # Run Main code
 stepImg, stepsList = getSimpleCoords(radiusStep, epsilon, height, startingPointScorbot)
 
+
+
+
+
+
+
+
+
+
+
+# Plot graphs to see if it worked:
+# 1. Colorbar with steps
+pyplotImage(stepImg)
+# 2. Points in world coords
+plt.figure(1)
+plt.scatter(stepsList[:,0], stepsList[:,1], marker='.')
+plt.title('Points in the vector given to Scorbot (not subsampled)')
+plt.show()
+# 3. Final points in world coords (subsampled)
+numberOfPoints = 30
+stepsListsubSampled = stepsList[0 : -1 : round(len(stepsList)/numberOfPoints)]
+plt.figure(2)
+plt.scatter(stepsListsubSampled[:,0], stepsListsubSampled[:,1], marker='.')
+plt.title('Points in the vector given to Scorbot (subsampled)')
+plt.show()
+
+
 #stepsList is the vector with each (x,y) point, in order, that composes the image, as shown below:
 '''
 stepsList = 
