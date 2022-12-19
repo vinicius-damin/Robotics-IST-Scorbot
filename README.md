@@ -1,5 +1,5 @@
 # Robotics-IST-Scorbot
-Send commands to a serial robot (SCORBOT-ER VII) in serial form. The aim of the project is to read an image in Python and then make the robot draw the same image on a sheet of paper
+Send commands to a serial robot (SCORBOT-ER VII) in serial form. The aim of the project is to read an image in Python and then make the robot draw the same image on a sheet of paper.
 
 
 
@@ -19,9 +19,11 @@ Ex: Your terminal has to show something like this "*C:\somePath\Robotics-IST-Sco
 
 ## Example of it working:
 If the image inside the folder **PutTheImageHere** is this:
+
 ![Alt text](For%20readme%20(don't%20change)/test_draw_2.png)
 
 Then, the **simpleScorbotCoords.Py** will return a list with two vectors (represented by the blue and orange dots), each containing the ordered points that will be send to the robot.
+
 ![Alt text](For%20readme%20(don't%20change)/output-test-draw-2.png)
 
 And, finally, the **CHARLIE CODE.py** will send these points in serial form to the robot draw the image.
