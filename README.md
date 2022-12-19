@@ -17,7 +17,7 @@ Ex: Your terminal has to show something like this "*C:\somePath\Robotics-IST-Sco
 3. Run (ourMainCode.py) and the robot will draw the image mentioned above.
 
 
-# Example:
+## Example of it working:
 If the image inside the folder **PutTheImageHere** is this:
 ![Alt text](For%20readme%20(don't%20change)/test_draw_2.png)
 
