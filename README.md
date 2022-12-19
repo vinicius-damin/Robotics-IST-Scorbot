@@ -18,19 +18,20 @@ Ex: Your terminal has to show something like this "*C:\somePath\Robotics-IST-Sco
 
 
 ## Example of it working:
-If the image inside the folder **PutTheImageHere** is this:
+1. If the image inside the folder **PutTheImageHere** is this:
 
 ![Alt text](For%20readme%20(don't%20change)/test_draw_2.png)
 
-Then, the **simpleScorbotCoords.Py** will return a list with two vectors (represented by the blue and orange dots), each containing the ordered points that will be send to the robot.
+2. Then, the **simpleScorbotCoords.Py** will return a list with two vectors (represented by the blue and orange dots), each containing the ordered points that will be send to the robot.
 
 ![Alt text](For%20readme%20(don't%20change)/output-test-draw-2.png)
 
-And, finally, the **CHARLIE CODE.py** will send these points in serial form to the robot draw the image.
+3. And, finally, the **CHARLIE CODE.py** will send these points in serial form to the robot draw the image. The image bellow is a picture of the drawing made by the robot:
 
 PUT THE PICTURE CHARLIE WILL TAKE
 
-Points that were sent to robot:
+*Points that were sent to robot to make the image above:*
+
 stepsList = [array([[ 8192.90499088, -2075.66075278],
        [ 8208.1711159 , -1977.16962361],
        [ 8245.59774498, -1898.37672028],
